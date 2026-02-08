@@ -36,22 +36,22 @@ struct HomeView: View {
                         )
                         .frame(width: 200, height: 200)
 
-                        // HPとしあわせ度バー
-                        VStack(spacing: 12) {
-                            StatBar(
-                                label: "HP",
+                        // HPとしあわせ度ゲージ
+                        HStack(spacing: 24) {
+                            CircularStatCard(
+                                title: "HP",
                                 value: vm.creature.hpRatio,
                                 color: hpColor(vm.creature.hpRatio),
                                 icon: "heart.fill"
                             )
-                            StatBar(
-                                label: "しあわせ",
+                            CircularStatCard(
+                                title: "しあわせ",
                                 value: vm.creature.happinessRatio,
                                 color: .orange,
                                 icon: "star.fill"
                             )
                         }
-                        .padding(.horizontal, 32)
+                        .padding(.horizontal, 16)
 
                         // 連続起床記録
                         HStack(spacing: 24) {
@@ -114,42 +114,53 @@ struct HomeView: View {
     }
 }
 
-// MARK: - ステータスバー
+// MARK: - 円形ステータスカード
 
-struct StatBar: View {
-    let label: String
+struct CircularStatCard: View {
+    let title: String
     let value: Double
     let color: Color
     let icon: String
 
+    private let lineWidth: CGFloat = 8
+
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .foregroundStyle(color)
-                .frame(width: 20)
+        VStack(spacing: 8) {
+            ZStack {
+                // 背景リング
+                Circle()
+                    .stroke(color.opacity(0.2), lineWidth: lineWidth)
 
-            Text(label)
-                .font(.caption)
-                .frame(width: 50, alignment: .leading)
+                // 値リング
+                Circle()
+                    .trim(from: 0, to: max(0, min(1, value)))
+                    .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.5), value: value)
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color.opacity(0.2))
-
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color)
-                        .frame(width: geo.size.width * max(0, min(1, value)))
-                        .animation(.easeInOut(duration: 0.5), value: value)
+                // 中央のアイコンと数値
+                VStack(spacing: 2) {
+                    Image(systemName: icon)
+                        .font(.caption)
+                        .foregroundStyle(color)
+                    Text("\(Int(value * 100))")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .monospacedDigit()
                 }
             }
-            .frame(height: 12)
+            .frame(width: 64, height: 64)
 
-            Text("\(Int(value * 100))")
+            Text(title)
                 .font(.caption)
-                .monospacedDigit()
-                .frame(width: 30, alignment: .trailing)
+                .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.ultraThinMaterial)
+        )
     }
 }
 
