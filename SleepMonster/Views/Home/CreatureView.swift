@@ -16,6 +16,17 @@ struct CreatureView: View {
     @State private var breathScale: CGFloat = 1.0
     @State private var bounceOffset: CGFloat = 0
 
+    // タッチインタラクション
+    @State private var squishX: CGFloat = 1.0
+    @State private var squishY: CGFloat = 1.0
+    @State private var isPressed = false
+    @State private var touchExpression: CreatureExpression?
+    @State private var hearts: [HeartParticle] = []
+
+    private var displayExpression: CreatureExpression {
+        touchExpression ?? expression
+    }
+
     var body: some View {
         ZStack {
             // 背景アクセサリー
@@ -29,7 +40,7 @@ struct CreatureView: View {
             }
 
             // ヤマネ本体（常に子ヤマネ）
-            YamaneBodyView(expression: expression)
+            YamaneBodyView(expression: displayExpression)
 
             // くびアクセサリー
             if let neck = equippedNeck {
@@ -50,9 +61,27 @@ struct CreatureView: View {
             if hp >= 0.9 {
                 SparkleEffect()
             }
+
+            // ハートパーティクル
+            ForEach(hearts) { heart in
+                Image(systemName: "heart.fill")
+                    .font(.system(size: heart.size))
+                    .foregroundStyle(.pink.opacity(heart.opacity))
+                    .offset(x: heart.x, y: heart.y)
+            }
         }
+        .scaleEffect(x: squishX * (isPressed ? 1.08 : 1.0),
+                      y: squishY * (isPressed ? 1.08 : 1.0))
         .scaleEffect(breathScale)
         .offset(y: bounceOffset)
+        .onTapGesture {
+            squish()
+        }
+        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                isPressed = pressing
+            }
+        }, perform: {})
         .onAppear {
             startBreathingAnimation()
             if expression == .happy {
@@ -85,6 +114,66 @@ struct CreatureView: View {
             bounceOffset = -8
         }
     }
+
+    // MARK: - タッチインタラクション
+
+    private func squish() {
+        // ぷにっと潰れる
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+            squishX = 1.15
+            squishY = 0.85
+        }
+        // 戻る
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.35)) {
+                squishX = 1.0
+                squishY = 1.0
+            }
+        }
+
+        // 表情を一瞬happyに
+        touchExpression = .happy
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            touchExpression = nil
+        }
+
+        // ハートを飛ばす
+        spawnHearts()
+    }
+
+    private func spawnHearts() {
+        for i in 0..<3 {
+            let heart = HeartParticle(
+                x: CGFloat.random(in: -30...30),
+                y: 0,
+                size: CGFloat.random(in: 10...16),
+                opacity: 1.0
+            )
+            hearts.append(heart)
+
+            let index = hearts.count - 1
+            let delay = Double(i) * 0.1
+
+            withAnimation(.easeOut(duration: 0.8).delay(delay)) {
+                hearts[index].y = CGFloat.random(in: -80 ... -50)
+                hearts[index].opacity = 0
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0 + delay) {
+                hearts.removeAll { $0.id == heart.id }
+            }
+        }
+    }
+}
+
+// MARK: - ハートパーティクル
+
+struct HeartParticle: Identifiable {
+    let id = UUID()
+    var x: CGFloat
+    var y: CGFloat
+    var size: CGFloat
+    var opacity: Double
 }
 
 // MARK: - ヤマネ本体（常に子ヤマネの姿）
