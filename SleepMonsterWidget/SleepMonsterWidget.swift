@@ -8,7 +8,6 @@ struct CreatureWidgetEntry: TimelineEntry {
     let creatureName: String
     let hp: Int
     let happiness: Int
-    let evolutionStage: Int
     let streak: Int
     let nextAlarmTime: String?
     let isDead: Bool
@@ -22,10 +21,9 @@ struct CreatureTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> CreatureWidgetEntry {
         CreatureWidgetEntry(
             date: .now,
-            creatureName: "ネムリン",
+            creatureName: "ヤマネ",
             hp: 80,
             happiness: 70,
-            evolutionStage: 1,
             streak: 5,
             nextAlarmTime: "07:00",
             isDead: false
@@ -38,7 +36,6 @@ struct CreatureTimelineProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<CreatureWidgetEntry>) -> Void) {
         let entry = loadEntry()
-        // 15分ごとに更新
         let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: .now)!
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
@@ -47,10 +44,9 @@ struct CreatureTimelineProvider: TimelineProvider {
     private func loadEntry() -> CreatureWidgetEntry {
         CreatureWidgetEntry(
             date: .now,
-            creatureName: defaults?.string(forKey: "widget_creature_name") ?? "ネムリン",
+            creatureName: defaults?.string(forKey: "widget_creature_name") ?? "ヤマネ",
             hp: defaults?.integer(forKey: "widget_creature_hp") ?? 100,
             happiness: defaults?.integer(forKey: "widget_creature_happiness") ?? 100,
-            evolutionStage: defaults?.integer(forKey: "widget_creature_stage") ?? 0,
             streak: defaults?.integer(forKey: "widget_creature_streak") ?? 0,
             nextAlarmTime: defaults?.string(forKey: "widget_next_alarm"),
             isDead: defaults?.bool(forKey: "widget_creature_dead") ?? false
@@ -65,21 +61,17 @@ struct SmallCreatureWidgetView: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            // 生き物の顔（簡易版）
             MiniCreatureFace(
-                stage: EvolutionStage(rawValue: entry.evolutionStage) ?? .egg,
                 hp: entry.hp,
                 isDead: entry.isDead
             )
             .frame(width: 50, height: 50)
 
-            // 名前
             Text(entry.creatureName)
                 .font(.caption2)
                 .fontWeight(.medium)
                 .lineLimit(1)
 
-            // 次のアラーム
             if let time = entry.nextAlarmTime {
                 HStack(spacing: 2) {
                     Image(systemName: "alarm.fill")
@@ -101,10 +93,8 @@ struct MediumCreatureWidgetView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // 左: 生き物
             VStack(spacing: 4) {
                 MiniCreatureFace(
-                    stage: EvolutionStage(rawValue: entry.evolutionStage) ?? .egg,
                     hp: entry.hp,
                     isDead: entry.isDead
                 )
@@ -115,9 +105,7 @@ struct MediumCreatureWidgetView: View {
                     .fontWeight(.medium)
             }
 
-            // 右: ステータス
             VStack(alignment: .leading, spacing: 8) {
-                // HP
                 HStack(spacing: 4) {
                     Image(systemName: "heart.fill")
                         .font(.caption2)
@@ -128,7 +116,6 @@ struct MediumCreatureWidgetView: View {
                         .monospacedDigit()
                 }
 
-                // 連続記録
                 HStack(spacing: 4) {
                     Image(systemName: "flame.fill")
                         .font(.caption2)
@@ -137,7 +124,6 @@ struct MediumCreatureWidgetView: View {
                         .font(.caption2)
                 }
 
-                // 次のアラーム
                 if let time = entry.nextAlarmTime {
                     HStack(spacing: 4) {
                         Image(systemName: "alarm.fill")
@@ -156,7 +142,6 @@ struct MediumCreatureWidgetView: View {
 // MARK: - ミニ生き物顔
 
 struct MiniCreatureFace: View {
-    let stage: EvolutionStage
     let hp: Int
     let isDead: Bool
 
@@ -165,18 +150,23 @@ struct MiniCreatureFace: View {
         return CreatureExpression.from(hp: hp, happiness: hp)
     }
 
-    var bodyColor: Color {
-        switch stage {
-        case .egg: return .purple.opacity(0.5)
-        case .baby: return .mint.opacity(0.7)
-        case .young, .adult, .master: return .purple.opacity(0.6)
-        }
-    }
-
     var body: some View {
         ZStack {
             Circle()
-                .fill(bodyColor)
+                .fill(Color.brown.opacity(0.5))
+
+            // 耳
+            HStack(spacing: 30) {
+                Ellipse()
+                    .fill(Color.brown.opacity(0.45))
+                    .frame(width: 12, height: 14)
+                    .rotationEffect(.degrees(-20))
+                Ellipse()
+                    .fill(Color.brown.opacity(0.45))
+                    .frame(width: 12, height: 14)
+                    .rotationEffect(.degrees(20))
+            }
+            .offset(y: -18)
 
             VStack(spacing: 3) {
                 HStack(spacing: 8) {
@@ -255,13 +245,12 @@ struct SleepMonsterWidget: Widget {
                 MediumCreatureWidgetView(entry: entry)
             }
         }
-        .configurationDisplayName("ねむモン")
-        .description("ネムリンの状態と次のアラームを表示します")
+        .configurationDisplayName("やまねむ")
+        .description("ヤマネの状態と次のアラームを表示します")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
-// ウィジェットファミリーへのアクセス用
 extension CreatureWidgetEntry {
     var widgetFamily: WidgetFamily { .systemSmall }
 }
@@ -280,10 +269,9 @@ struct SleepMonsterWidgetBundle: WidgetBundle {
 } timeline: {
     CreatureWidgetEntry(
         date: .now,
-        creatureName: "ネムリン",
+        creatureName: "ヤマネ",
         hp: 85,
         happiness: 70,
-        evolutionStage: 2,
         streak: 7,
         nextAlarmTime: "07:00",
         isDead: false
@@ -295,10 +283,9 @@ struct SleepMonsterWidgetBundle: WidgetBundle {
 } timeline: {
     CreatureWidgetEntry(
         date: .now,
-        creatureName: "ネムリン",
+        creatureName: "ヤマネ",
         hp: 85,
         happiness: 70,
-        evolutionStage: 2,
         streak: 7,
         nextAlarmTime: "07:00",
         isDead: false

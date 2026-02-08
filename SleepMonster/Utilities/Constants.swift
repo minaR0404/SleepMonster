@@ -21,7 +21,7 @@ enum Constants {
     enum CreatureDefaults {
         static let maxHP = 100
         static let maxHappiness = 100
-        static let defaultName = "ネムリン"
+        static let defaultName = "ヤマネ"
         static let revivalChallengeDays = 7
     }
 

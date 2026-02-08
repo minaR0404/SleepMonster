@@ -13,7 +13,7 @@ struct SettingsView: View {
             Form {
                 if let vm = creatureVM {
                     // 生き物セクション
-                    Section("ネムリン") {
+                    Section("ヤマネ") {
                         HStack {
                             Text("名前")
                             Spacer()
@@ -26,9 +26,9 @@ struct SettingsView: View {
                         }
 
                         HStack {
-                            Text("進化段階")
+                            Text("アクセサリー")
                             Spacer()
-                            Text(vm.creature.evolutionStage.name)
+                            Text("\(vm.creature.unlockedAccessoryIDs.count)/\(AccessoryCatalog.all.count)")
                                 .foregroundStyle(.secondary)
                         }
 
@@ -43,6 +43,13 @@ struct SettingsView: View {
                             Text("総起床回数")
                             Spacer()
                             Text("\(vm.creature.totalWakeUps)回")
+                                .foregroundStyle(.secondary)
+                        }
+
+                        HStack {
+                            Text("最高連続起床")
+                            Spacer()
+                            Text("\(vm.creature.bestStreak)日")
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -77,7 +84,7 @@ struct SettingsView: View {
                         HStack {
                             Text("アプリ名")
                             Spacer()
-                            Text("ねむモン")
+                            Text("やまねむ")
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -96,7 +103,7 @@ struct SettingsView: View {
                     creatureVM?.rename(editingName)
                 }
             } message: {
-                Text("ネムリンの名前を入力してください")
+                Text("ヤマネの名前を入力してください")
             }
         }
     }

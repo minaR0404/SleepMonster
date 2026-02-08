@@ -11,22 +11,28 @@ struct HomeView: View {
             if let vm = creatureVM, let alarmVM = alarmVM {
                 ScrollView {
                     VStack(spacing: 24) {
-                        // 生き物の名前と進化段階
+                        // 生き物の名前
                         VStack(spacing: 4) {
                             Text(vm.creature.name)
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            Text(vm.creature.evolutionStage.name)
+
+                            // 解放済みアクセサリー数
+                            Text("アクセサリー \(vm.creature.unlockedAccessoryIDs.count)/\(AccessoryCatalog.all.count)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
                         // 生き物の表示
                         CreatureView(
-                            stage: vm.creature.evolutionStage,
                             expression: vm.creature.expression,
                             hp: vm.creature.hpRatio,
-                            happiness: vm.creature.happinessRatio
+                            happiness: vm.creature.happinessRatio,
+                            equippedHead: vm.creature.equippedHead,
+                            equippedNeck: vm.creature.equippedNeck,
+                            equippedHeld: vm.creature.equippedHeld,
+                            equippedBack: vm.creature.equippedBack,
+                            equippedBackground: vm.creature.equippedBackground
                         )
                         .frame(width: 200, height: 200)
 
@@ -68,15 +74,20 @@ struct HomeView: View {
                     }
                     .padding(.top, 20)
                 }
-                .navigationTitle("ねむモン")
-                .alert("進化した！", isPresented: $vm.showEvolutionAlert) {
+                .navigationTitle("やまねむ")
+                .alert("新しいアクセサリー！", isPresented: Binding(
+                    get: { vm.showAccessoryAlert },
+                    set: { vm.showAccessoryAlert = $0 }
+                )) {
                     Button("やったー！") {}
                 } message: {
-                    if let stage = vm.lastEvolutionStage {
-                        Text("\(vm.creature.name)が\(stage.name)に進化しました！")
-                    }
+                    let names = vm.newlyUnlockedAccessories.map(\.name).joined(separator: "、")
+                    Text("\(vm.creature.name)が「\(names)」を手に入れたよ！")
                 }
-                .alert("ネムリンが…", isPresented: $vm.showDeathAlert) {
+                .alert("ヤマネが…", isPresented: Binding(
+                    get: { vm.showDeathAlert },
+                    set: { vm.showDeathAlert = $0 }
+                )) {
                     Button("復活チャレンジ") {
                         vm.revive()
                     }

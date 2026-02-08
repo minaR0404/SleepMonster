@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import Combine
 
 @MainActor
 final class NotificationService: ObservableObject {
@@ -156,8 +157,8 @@ final class NotificationService: ObservableObject {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "ネムリンが心配してるよ…"
-        content.body = "まだ寝てる？ネムリンが元気なくなっちゃうよ！"
+        content.title = "ヤマネが心配してるよ…"
+        content.body = "まだ寝てる？ヤマネが元気なくなっちゃうよ！"
         content.sound = .default
         content.interruptionLevel = .timeSensitive
         content.categoryIdentifier = Constants.Notification.sentinelCategoryIdentifier
@@ -182,7 +183,7 @@ final class NotificationService: ObservableObject {
     private func makeAlarmContent(_ alarm: Alarm) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = alarm.label.isEmpty ? "おはよう！" : alarm.label
-        content.body = "ネムリンが待ってるよ！起きて世話をしよう！"
+        content.body = "ヤマネが待ってるよ！起きて世話をしよう！"
         content.sound = UNNotificationSound(named: UNNotificationSoundName("\(alarm.soundName).caf"))
         content.interruptionLevel = .timeSensitive
         content.categoryIdentifier = Constants.Notification.alarmCategoryIdentifier
@@ -199,7 +200,7 @@ final class NotificationService: ObservableObject {
     func scheduleSnooze(alarmId: UUID, soundName: String) {
         let content = UNMutableNotificationContent()
         content.title = "スヌーズ終了！"
-        content.body = "ネムリンがまだ待ってるよ…今度こそ起きよう！"
+        content.body = "ヤマネがまだ待ってるよ…今度こそ起きよう！"
         content.sound = UNNotificationSound(named: UNNotificationSoundName("\(soundName).caf"))
         content.interruptionLevel = .timeSensitive
         content.categoryIdentifier = Constants.Notification.alarmCategoryIdentifier

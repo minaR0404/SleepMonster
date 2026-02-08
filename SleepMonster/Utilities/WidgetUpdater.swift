@@ -8,7 +8,6 @@ struct WidgetUpdater {
         defaults?.set(creature.name, forKey: "widget_creature_name")
         defaults?.set(creature.hp, forKey: "widget_creature_hp")
         defaults?.set(creature.happiness, forKey: "widget_creature_happiness")
-        defaults?.set(creature.evolutionStageRaw, forKey: "widget_creature_stage")
         defaults?.set(creature.streak, forKey: "widget_creature_streak")
         defaults?.set(creature.isDead, forKey: "widget_creature_dead")
 

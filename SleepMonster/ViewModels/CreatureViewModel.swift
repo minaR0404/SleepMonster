@@ -8,10 +8,10 @@ final class CreatureViewModel {
     private let repository: CreatureRepository
     private(set) var creature: Creature
 
-    var showEvolutionAlert = false
+    var showAccessoryAlert = false
     var showDeathAlert = false
     var showRevivalAlert = false
-    var lastEvolutionStage: EvolutionStage?
+    var newlyUnlockedAccessories: [Accessory] = []
 
     init(modelContext: ModelContext) {
         let repo = CreatureRepository(modelContext: modelContext)
@@ -29,13 +29,12 @@ final class CreatureViewModel {
             creature: creature
         )
 
-        let previousStage = creature.evolutionStage
         CreatureEngine.applyResult(result, to: creature)
 
-        // 進化チェック
-        if let newStage = result.newEvolutionStage, newStage != previousStage {
-            lastEvolutionStage = newStage
-            showEvolutionAlert = true
+        // アクセサリー解放チェック
+        if !result.newAccessories.isEmpty {
+            newlyUnlockedAccessories = result.newAccessories
+            showAccessoryAlert = true
         }
 
         // 死亡チェック
@@ -100,6 +99,19 @@ final class CreatureViewModel {
     func rename(_ newName: String) {
         guard !newName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         creature.name = newName
+        repository.save()
+    }
+
+    // MARK: - アクセサリー装備
+
+    func equip(_ accessory: Accessory) {
+        guard creature.unlockedAccessoryIDs.contains(accessory.id) else { return }
+        creature.equip(accessory.id, for: accessory.category)
+        repository.save()
+    }
+
+    func unequip(category: AccessoryCategory) {
+        creature.equip(nil, for: category)
         repository.save()
     }
 

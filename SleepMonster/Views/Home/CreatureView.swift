@@ -1,38 +1,60 @@
 import SwiftUI
 
 struct CreatureView: View {
-    let stage: EvolutionStage
     let expression: CreatureExpression
     let hp: Double
     let happiness: Double
 
+    // 装備中アクセサリーID
+    var equippedHead: String?
+    var equippedNeck: String?
+    var equippedHeld: String?
+    var equippedBack: String?
+    var equippedBackground: String?
+
     // アニメーション状態
     @State private var breathScale: CGFloat = 1.0
-    @State private var blinkOpacity: Double = 1.0
     @State private var bounceOffset: CGFloat = 0
-    @State private var wobble: Double = 0
 
     var body: some View {
         ZStack {
-            switch stage {
-            case .egg:
-                EggView(expression: expression)
-            case .baby:
-                BabyCreatureView(expression: expression)
-            case .young:
-                YoungCreatureView(expression: expression)
-            case .adult:
-                AdultCreatureView(expression: expression)
-            case .master:
-                MasterCreatureView(expression: expression)
+            // 背景アクセサリー
+            if let bg = equippedBackground {
+                BackgroundAccessoryView(id: bg)
+            }
+
+            // せなかアクセサリー（本体の後ろ）
+            if let back = equippedBack {
+                BackAccessoryView(id: back)
+            }
+
+            // ヤマネ本体（常に子ヤマネ）
+            YamaneBodyView(expression: expression)
+
+            // くびアクセサリー
+            if let neck = equippedNeck {
+                NeckAccessoryView(id: neck)
+            }
+
+            // もちものアクセサリー
+            if let held = equippedHeld {
+                HeldAccessoryView(id: held)
+            }
+
+            // あたまアクセサリー
+            if let head = equippedHead {
+                HeadAccessoryView(id: head)
+            }
+
+            // HP高いときのキラキラ
+            if hp >= 0.9 {
+                SparkleEffect()
             }
         }
         .scaleEffect(breathScale)
         .offset(y: bounceOffset)
-        .rotationEffect(.degrees(wobble))
         .onAppear {
             startBreathingAnimation()
-            startBlinkingAnimation()
             if expression == .happy {
                 startBounceAnimation()
             }
@@ -55,19 +77,6 @@ struct CreatureView: View {
         }
     }
 
-    private func startBlinkingAnimation() {
-        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                blinkOpacity = 0.0
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    blinkOpacity = 1.0
-                }
-            }
-        }
-    }
-
     private func startBounceAnimation() {
         withAnimation(
             .easeInOut(duration: 0.6)
@@ -78,329 +87,378 @@ struct CreatureView: View {
     }
 }
 
-// MARK: - タマゴ
+// MARK: - ヤマネ本体（常に子ヤマネの姿）
 
-struct EggView: View {
-    let expression: CreatureExpression
-    @State private var wobble = false
-
-    var body: some View {
-        ZStack {
-            // タマゴ本体
-            Ellipse()
-                .fill(
-                    LinearGradient(
-                        colors: [.purple.opacity(0.3), .purple.opacity(0.6)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 100, height: 130)
-                .overlay(
-                    Ellipse()
-                        .fill(.white.opacity(0.3))
-                        .frame(width: 30, height: 40)
-                        .offset(x: -15, y: -20)
-                )
-
-            // ひび割れ模様
-            ZigZagLine()
-                .stroke(.purple.opacity(0.4), lineWidth: 2)
-                .frame(width: 80, height: 20)
-                .offset(y: 10)
-
-            // 顔（うっすら見える）
-            VStack(spacing: 8) {
-                HStack(spacing: 20) {
-                    Circle().fill(.purple.opacity(0.4)).frame(width: 8, height: 8)
-                    Circle().fill(.purple.opacity(0.4)).frame(width: 8, height: 8)
-                }
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(.purple.opacity(0.3))
-                    .frame(width: 10, height: 4)
-            }
-            .offset(y: -15)
-        }
-        .rotationEffect(.degrees(wobble ? 3 : -3))
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                wobble = true
-            }
-        }
-    }
-}
-
-// MARK: - ベビモン
-
-struct BabyCreatureView: View {
+struct YamaneBodyView: View {
     let expression: CreatureExpression
 
-    var body: some View {
-        ZStack {
-            // 体
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [.mint.opacity(0.5), .mint.opacity(0.8)],
-                        center: .center,
-                        startRadius: 10,
-                        endRadius: 60
-                    )
-                )
-                .frame(width: 120, height: 120)
-
-            // ハイライト
-            Circle()
-                .fill(.white.opacity(0.4))
-                .frame(width: 35, height: 35)
-                .offset(x: -20, y: -20)
-
-            // 顔
-            CreatureFace(expression: expression, eyeSize: 14, eyeSpacing: 24, mouthScale: 1.0)
-        }
-    }
-}
-
-// MARK: - ヤングモン
-
-struct YoungCreatureView: View {
-    let expression: CreatureExpression
+    var bodyColor: Color { .brown.opacity(0.45) }
+    var bellyColor: Color { .orange.opacity(0.2) }
 
     var body: some View {
         ZStack {
             // 耳
             HStack(spacing: 70) {
-                Ellipse()
-                    .fill(Color.indigo.opacity(0.5))
-                    .frame(width: 25, height: 35)
+                YamaneEar()
                     .rotationEffect(.degrees(-20))
-                Ellipse()
-                    .fill(Color.indigo.opacity(0.5))
-                    .frame(width: 25, height: 35)
+                YamaneEar()
                     .rotationEffect(.degrees(20))
             }
-            .offset(y: -55)
+            .offset(y: -50)
 
-            // 体
-            Capsule()
-                .fill(
-                    LinearGradient(
-                        colors: [.indigo.opacity(0.4), .indigo.opacity(0.7)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 130, height: 150)
+            // しっぽ
+            YamaneTail()
+                .offset(x: 55, y: 30)
 
-            // ハイライト
-            Ellipse()
-                .fill(.white.opacity(0.3))
-                .frame(width: 40, height: 50)
-                .offset(x: -20, y: -20)
-
-            // 腕
-            HStack(spacing: 100) {
-                Capsule()
-                    .fill(Color.indigo.opacity(0.5))
-                    .frame(width: 20, height: 40)
-                    .rotationEffect(.degrees(20))
-                Capsule()
-                    .fill(Color.indigo.opacity(0.5))
-                    .frame(width: 20, height: 40)
-                    .rotationEffect(.degrees(-20))
-            }
-            .offset(y: 10)
-
-            // 顔
-            CreatureFace(expression: expression, eyeSize: 16, eyeSpacing: 28, mouthScale: 1.2)
-                .offset(y: -15)
-        }
-    }
-}
-
-// MARK: - アダルトモン
-
-struct AdultCreatureView: View {
-    let expression: CreatureExpression
-
-    var body: some View {
-        ZStack {
-            // 耳
-            HStack(spacing: 80) {
-                Ellipse()
-                    .fill(Color.purple.opacity(0.5))
-                    .frame(width: 30, height: 45)
-                    .rotationEffect(.degrees(-15))
-                Ellipse()
-                    .fill(Color.purple.opacity(0.5))
-                    .frame(width: 30, height: 45)
-                    .rotationEffect(.degrees(15))
-            }
-            .offset(y: -65)
-
-            // 体
-            Capsule()
-                .fill(
-                    LinearGradient(
-                        colors: [.purple.opacity(0.4), .purple.opacity(0.7)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 140, height: 165)
-
-            // ほっぺ
-            HStack(spacing: 80) {
-                Circle()
-                    .fill(.pink.opacity(0.3))
-                    .frame(width: 20, height: 20)
-                Circle()
-                    .fill(.pink.opacity(0.3))
-                    .frame(width: 20, height: 20)
-            }
-            .offset(y: -5)
-
-            // ハイライト
-            Ellipse()
-                .fill(.white.opacity(0.3))
-                .frame(width: 45, height: 55)
-                .offset(x: -22, y: -25)
-
-            // 腕
-            HStack(spacing: 115) {
-                Capsule()
-                    .fill(Color.purple.opacity(0.5))
-                    .frame(width: 22, height: 45)
-                    .rotationEffect(.degrees(15))
-                Capsule()
-                    .fill(Color.purple.opacity(0.5))
-                    .frame(width: 22, height: 45)
-                    .rotationEffect(.degrees(-15))
-            }
-            .offset(y: 10)
-
-            // 足
-            HStack(spacing: 40) {
-                Capsule()
-                    .fill(Color.purple.opacity(0.6))
-                    .frame(width: 28, height: 25)
-                Capsule()
-                    .fill(Color.purple.opacity(0.6))
-                    .frame(width: 28, height: 25)
-            }
-            .offset(y: 80)
-
-            // 顔
-            CreatureFace(expression: expression, eyeSize: 18, eyeSpacing: 32, mouthScale: 1.3)
-                .offset(y: -18)
-        }
-    }
-}
-
-// MARK: - マスターモン
-
-struct MasterCreatureView: View {
-    let expression: CreatureExpression
-    @State private var glowOpacity: Double = 0.3
-
-    var body: some View {
-        ZStack {
-            // グロー効果
+            // 体（まんまる）
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [.yellow.opacity(glowOpacity), .clear],
+                        colors: [bodyColor, .brown.opacity(0.65)],
                         center: .center,
-                        startRadius: 50,
-                        endRadius: 120
+                        startRadius: 10,
+                        endRadius: 65
                     )
                 )
-                .frame(width: 240, height: 240)
+                .frame(width: 130, height: 130)
 
-            // 王冠
-            CrownShape()
-                .fill(.yellow.opacity(0.8))
-                .frame(width: 50, height: 25)
-                .offset(y: -90)
-
-            // 耳
-            HStack(spacing: 85) {
-                Ellipse()
-                    .fill(Color.purple.opacity(0.6))
-                    .frame(width: 32, height: 48)
-                    .rotationEffect(.degrees(-15))
-                Ellipse()
-                    .fill(Color.purple.opacity(0.6))
-                    .frame(width: 32, height: 48)
-                    .rotationEffect(.degrees(15))
-            }
-            .offset(y: -65)
-
-            // 体
-            Capsule()
-                .fill(
-                    LinearGradient(
-                        colors: [.purple.opacity(0.5), .purple.opacity(0.8)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 145, height: 170)
-
-            // 星マーク（胸元）
-            Image(systemName: "star.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(.yellow.opacity(0.7))
-                .offset(y: 30)
-
-            // ほっぺ
-            HStack(spacing: 85) {
-                Circle()
-                    .fill(.pink.opacity(0.4))
-                    .frame(width: 22, height: 22)
-                Circle()
-                    .fill(.pink.opacity(0.4))
-                    .frame(width: 22, height: 22)
-            }
-            .offset(y: -5)
+            // おなか
+            Ellipse()
+                .fill(bellyColor)
+                .frame(width: 80, height: 70)
+                .offset(y: 10)
 
             // ハイライト
-            Ellipse()
-                .fill(.white.opacity(0.3))
-                .frame(width: 48, height: 58)
-                .offset(x: -24, y: -25)
+            Circle()
+                .fill(.white.opacity(0.35))
+                .frame(width: 35, height: 35)
+                .offset(x: -22, y: -25)
 
-            // 腕
-            HStack(spacing: 120) {
+            // 手
+            HStack(spacing: 95) {
                 Capsule()
-                    .fill(Color.purple.opacity(0.6))
-                    .frame(width: 24, height: 48)
-                    .rotationEffect(.degrees(15))
+                    .fill(bodyColor)
+                    .frame(width: 18, height: 30)
+                    .rotationEffect(.degrees(20))
                 Capsule()
-                    .fill(Color.purple.opacity(0.6))
-                    .frame(width: 24, height: 48)
-                    .rotationEffect(.degrees(-15))
+                    .fill(bodyColor)
+                    .frame(width: 18, height: 30)
+                    .rotationEffect(.degrees(-20))
             }
-            .offset(y: 10)
+            .offset(y: 15)
 
             // 足
-            HStack(spacing: 45) {
+            HStack(spacing: 35) {
                 Capsule()
-                    .fill(Color.purple.opacity(0.7))
-                    .frame(width: 30, height: 28)
+                    .fill(.brown.opacity(0.55))
+                    .frame(width: 24, height: 18)
                 Capsule()
-                    .fill(Color.purple.opacity(0.7))
-                    .frame(width: 30, height: 28)
+                    .fill(.brown.opacity(0.55))
+                    .frame(width: 24, height: 18)
             }
-            .offset(y: 83)
+            .offset(y: 62)
+
+            // ほっぺ
+            HStack(spacing: 65) {
+                Circle()
+                    .fill(.pink.opacity(0.3))
+                    .frame(width: 16, height: 16)
+                Circle()
+                    .fill(.pink.opacity(0.3))
+                    .frame(width: 16, height: 16)
+            }
+            .offset(y: 0)
 
             // 顔
-            CreatureFace(expression: expression, eyeSize: 20, eyeSpacing: 34, mouthScale: 1.4)
-                .offset(y: -20)
+            CreatureFace(expression: expression, eyeSize: 15, eyeSpacing: 26, mouthScale: 1.1)
+                .offset(y: -10)
+        }
+    }
+}
+
+// MARK: - ヤマネの耳
+
+struct YamaneEar: View {
+    var body: some View {
+        ZStack {
+            Ellipse()
+                .fill(Color.brown.opacity(0.5))
+                .frame(width: 28, height: 35)
+            Ellipse()
+                .fill(Color.pink.opacity(0.25))
+                .frame(width: 16, height: 20)
+        }
+    }
+}
+
+// MARK: - ヤマネのしっぽ
+
+struct YamaneTail: View {
+    var body: some View {
+        Capsule()
+            .fill(Color.brown.opacity(0.45))
+            .frame(width: 40, height: 16)
+            .rotationEffect(.degrees(-30))
+    }
+}
+
+// MARK: - アクセサリー描画
+
+struct HeadAccessoryView: View {
+    let id: String
+
+    var body: some View {
+        Group {
+            switch id {
+            case "nightcap":
+                // ナイトキャップ
+                ZStack {
+                    Triangle()
+                        .fill(Color.indigo.opacity(0.7))
+                        .frame(width: 40, height: 45)
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 10, height: 10)
+                        .offset(x: 12, y: -20)
+                }
+                .offset(x: 15, y: -68)
+                .rotationEffect(.degrees(15))
+
+            case "crown_flower":
+                // 花冠
+                HStack(spacing: 6) {
+                    FlowerShape().fill(.pink).frame(width: 14, height: 14)
+                    FlowerShape().fill(.yellow).frame(width: 14, height: 14)
+                    FlowerShape().fill(.pink).frame(width: 14, height: 14)
+                    FlowerShape().fill(.yellow).frame(width: 14, height: 14)
+                }
+                .offset(y: -70)
+
+            case "crown_gold":
+                // 王冠
+                CrownShape()
+                    .fill(.yellow.opacity(0.85))
+                    .frame(width: 45, height: 22)
+                    .offset(y: -72)
+
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+struct NeckAccessoryView: View {
+    let id: String
+
+    var body: some View {
+        Group {
+            switch id {
+            case "scarf_fluffy":
+                // もこもこマフラー
+                ZStack {
+                    Capsule()
+                        .fill(Color.red.opacity(0.6))
+                        .frame(width: 100, height: 22)
+                    // マフラーの垂れ部分
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.red.opacity(0.5))
+                        .frame(width: 18, height: 30)
+                        .offset(x: 30, y: 18)
+                }
+                .offset(y: 30)
+
+            case "pendant_star":
+                // 星のペンダント
+                VStack(spacing: 0) {
+                    Capsule()
+                        .fill(.yellow.opacity(0.4))
+                        .frame(width: 60, height: 3)
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.yellow)
+                }
+                .offset(y: 35)
+
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+struct HeldAccessoryView: View {
+    let id: String
+
+    var body: some View {
+        Group {
+            switch id {
+            case "pillow_mini":
+                // ミニまくら
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.cyan.opacity(0.5))
+                    .frame(width: 28, height: 20)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(.white.opacity(0.5), lineWidth: 1)
+                    )
+                    .rotationEffect(.degrees(-10))
+                    .offset(x: -58, y: 20)
+
+            case "wand_star":
+                // 星のステッキ
+                ZStack(alignment: .top) {
+                    Capsule()
+                        .fill(.yellow.opacity(0.6))
+                        .frame(width: 5, height: 45)
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.yellow)
+                        .offset(y: -8)
+                }
+                .offset(x: -60, y: -5)
+
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+struct BackAccessoryView: View {
+    let id: String
+
+    var body: some View {
+        Group {
+            switch id {
+            case "wings_angel":
+                // 天使の羽
+                HStack(spacing: 90) {
+                    WingShape()
+                        .fill(.white.opacity(0.6))
+                        .frame(width: 35, height: 40)
+                        .scaleEffect(x: -1)
+                    WingShape()
+                        .fill(.white.opacity(0.6))
+                        .frame(width: 35, height: 40)
+                }
+                .offset(y: -5)
+
+            case "cape_moon":
+                // 月のマント
+                CapeShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [.indigo.opacity(0.5), .purple.opacity(0.4)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 140, height: 80)
+                    .offset(y: 30)
+
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+struct BackgroundAccessoryView: View {
+    let id: String
+
+    var body: some View {
+        Group {
+            switch id {
+            case "bg_clouds":
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.3))
+                        .frame(width: 180, height: 180)
+                    CloudShape()
+                        .fill(.white.opacity(0.5))
+                        .frame(width: 80, height: 30)
+                        .offset(x: -50, y: 60)
+                    CloudShape()
+                        .fill(.white.opacity(0.4))
+                        .frame(width: 60, height: 22)
+                        .offset(x: 55, y: 50)
+                }
+
+            case "bg_flowers":
+                ZStack {
+                    ForEach(0..<5) { i in
+                        FlowerShape()
+                            .fill([Color.pink, .yellow, .orange, .purple, .red][i % 5])
+                            .frame(width: 12, height: 12)
+                            .offset(
+                                x: CGFloat([-60, -30, 0, 30, 60][i]),
+                                y: CGFloat([65, 72, 68, 74, 66][i])
+                            )
+                    }
+                }
+
+            case "bg_starry":
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [.indigo.opacity(0.15), .clear],
+                                center: .center,
+                                startRadius: 40,
+                                endRadius: 100
+                            )
+                        )
+                        .frame(width: 200, height: 200)
+                    ForEach(0..<6) { i in
+                        Image(systemName: "star.fill")
+                            .font(.system(size: CGFloat([6, 8, 5, 7, 6, 9][i])))
+                            .foregroundStyle(.yellow.opacity(0.6))
+                            .offset(
+                                x: CGFloat([-70, 65, -50, 75, -80, 40][i]),
+                                y: CGFloat([-60, -55, 30, 40, -10, -70][i])
+                            )
+                    }
+                }
+
+            case "bg_rainbow":
+                RainbowArc()
+                    .stroke(
+                        AngularGradient(
+                            colors: [.red, .orange, .yellow, .green, .blue, .purple, .red],
+                            center: .bottom
+                        ),
+                        lineWidth: 6
+                    )
+                    .frame(width: 180, height: 90)
+                    .offset(y: -30)
+                    .opacity(0.4)
+
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+// MARK: - キラキラエフェクト
+
+struct SparkleEffect: View {
+    @State private var opacity: Double = 0.3
+
+    var body: some View {
+        ForEach(0..<3) { i in
+            Image(systemName: "sparkle")
+                .font(.system(size: CGFloat([10, 8, 12][i])))
+                .foregroundStyle(.yellow.opacity(opacity))
+                .offset(
+                    x: CGFloat([-55, 60, -40][i]),
+                    y: CGFloat([-50, -40, 35][i])
+                )
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                glowOpacity = 0.6
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                opacity = 0.8
             }
         }
     }
@@ -418,13 +476,10 @@ struct CreatureFace: View {
 
     var body: some View {
         VStack(spacing: 8 * mouthScale) {
-            // 目
             HStack(spacing: eyeSpacing) {
                 EyeView(size: eyeSize, expression: expression, blinkProgress: blinkProgress)
                 EyeView(size: eyeSize, expression: expression, blinkProgress: blinkProgress)
             }
-
-            // 口
             MouthView(expression: expression, scale: mouthScale)
         }
         .onAppear {
@@ -457,17 +512,14 @@ struct EyeView: View {
         ZStack {
             switch expression {
             case .happy:
-                // にっこり目（U字）
                 HappyEyeShape()
                     .stroke(.black, lineWidth: 2.5)
                     .frame(width: size, height: size * 0.5)
 
             case .neutral:
-                // 通常の目
                 Ellipse()
                     .fill(.black)
                     .frame(width: size * 0.8, height: size * blinkProgress)
-                // ハイライト
                 Circle()
                     .fill(.white)
                     .frame(width: size * 0.3, height: size * 0.3)
@@ -475,26 +527,21 @@ struct EyeView: View {
                     .opacity(blinkProgress)
 
             case .sad:
-                // 悲しい目（下がった眉付き）
                 VStack(spacing: 2) {
-                    // 眉
                     SadEyebrowShape()
                         .stroke(.black, lineWidth: 2)
                         .frame(width: size, height: size * 0.3)
-                    // 目
                     Ellipse()
                         .fill(.black)
                         .frame(width: size * 0.7, height: size * 0.6 * blinkProgress)
                 }
 
             case .sleeping:
-                // 寝ている目
                 Text("−")
                     .font(.system(size: size))
                     .fontWeight(.bold)
 
             case .dead:
-                // ×目
                 Text("×")
                     .font(.system(size: size))
                     .foregroundStyle(.gray)
@@ -513,31 +560,26 @@ struct MouthView: View {
         Group {
             switch expression {
             case .happy:
-                // 大きく開いた口
                 HappyMouthShape()
                     .fill(.pink.opacity(0.6))
                     .frame(width: 20 * scale, height: 12 * scale)
 
             case .neutral:
-                // 普通の口
                 Capsule()
                     .fill(.pink.opacity(0.5))
                     .frame(width: 12 * scale, height: 5 * scale)
 
             case .sad:
-                // への字口
                 SadMouthShape()
                     .stroke(.black, lineWidth: 2)
                     .frame(width: 16 * scale, height: 8 * scale)
 
             case .sleeping:
-                // Zzz
                 Text("zzz")
                     .font(.system(size: 10 * scale))
                     .foregroundStyle(.secondary)
 
             case .dead:
-                // 波線
                 Text("〜")
                     .font(.system(size: 12 * scale))
                     .foregroundStyle(.gray)
@@ -628,29 +670,131 @@ struct CrownShape: Shape {
     }
 }
 
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+struct FlowerShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let petalRadius = rect.width * 0.35
+        let centerRadius = rect.width * 0.2
+        for i in 0..<5 {
+            let angle = CGFloat(i) * .pi * 2 / 5 - .pi / 2
+            let petalCenter = CGPoint(
+                x: center.x + cos(angle) * petalRadius,
+                y: center.y + sin(angle) * petalRadius
+            )
+            path.addEllipse(in: CGRect(
+                x: petalCenter.x - centerRadius,
+                y: petalCenter.y - centerRadius,
+                width: centerRadius * 2,
+                height: centerRadius * 2
+            ))
+        }
+        path.addEllipse(in: CGRect(
+            x: center.x - centerRadius * 0.6,
+            y: center.y - centerRadius * 0.6,
+            width: centerRadius * 1.2,
+            height: centerRadius * 1.2
+        ))
+        return path
+    }
+}
+
+struct WingShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.minY),
+            control: CGPoint(x: rect.minX, y: rect.minY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX, y: rect.maxY),
+            control: CGPoint(x: rect.maxX, y: rect.midY)
+        )
+        return path
+    }
+}
+
+struct CapeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 0.15, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.15, y: rect.minY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.maxY),
+            control: CGPoint(x: rect.maxX + 10, y: rect.midY)
+        )
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + rect.width * 0.15, y: rect.minY),
+            control: CGPoint(x: rect.minX - 10, y: rect.midY)
+        )
+        return path
+    }
+}
+
+struct CloudShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.addEllipse(in: CGRect(x: rect.minX, y: rect.midY, width: rect.width * 0.4, height: rect.height))
+        path.addEllipse(in: CGRect(x: rect.width * 0.2, y: rect.minY, width: rect.width * 0.5, height: rect.height))
+        path.addEllipse(in: CGRect(x: rect.width * 0.5, y: rect.midY * 0.8, width: rect.width * 0.5, height: rect.height))
+        return path
+    }
+}
+
+struct RainbowArc: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.addArc(
+            center: CGPoint(x: rect.midX, y: rect.maxY),
+            radius: rect.width / 2,
+            startAngle: .degrees(180),
+            endAngle: .degrees(0),
+            clockwise: false
+        )
+        return path
+    }
+}
+
 // MARK: - プレビュー
 
-#Preview("タマゴ") {
-    CreatureView(stage: .egg, expression: .neutral, hp: 1.0, happiness: 1.0)
+#Preview("ヤマネ - 元気") {
+    CreatureView(expression: .happy, hp: 0.95, happiness: 0.9)
         .frame(width: 200, height: 200)
 }
 
-#Preview("ベビモン - 元気") {
-    CreatureView(stage: .baby, expression: .happy, hp: 0.9, happiness: 0.9)
+#Preview("ヤマネ - 普通") {
+    CreatureView(expression: .neutral, hp: 0.7, happiness: 0.5)
         .frame(width: 200, height: 200)
 }
 
-#Preview("ヤングモン - 普通") {
-    CreatureView(stage: .young, expression: .neutral, hp: 0.7, happiness: 0.5)
+#Preview("ヤマネ - 悲しい") {
+    CreatureView(expression: .sad, hp: 0.3, happiness: 0.2)
         .frame(width: 200, height: 200)
 }
 
-#Preview("アダルトモン - 悲しい") {
-    CreatureView(stage: .adult, expression: .sad, hp: 0.3, happiness: 0.2)
-        .frame(width: 200, height: 200)
-}
-
-#Preview("マスターモン") {
-    CreatureView(stage: .master, expression: .happy, hp: 1.0, happiness: 1.0)
-        .frame(width: 200, height: 200)
+#Preview("ヤマネ - フル装備") {
+    CreatureView(
+        expression: .happy,
+        hp: 0.95,
+        happiness: 0.95,
+        equippedHead: "crown_gold",
+        equippedNeck: "pendant_star",
+        equippedHeld: "wand_star",
+        equippedBack: "wings_angel",
+        equippedBackground: "bg_starry"
+    )
+    .frame(width: 200, height: 200)
 }

@@ -121,36 +121,53 @@ struct CreatureEngineTests {
         #expect(result.happinessDelta == -20)
     }
 
-    // MARK: - 進化テスト
+    // MARK: - アクセサリー解放テスト
 
-    @Test("連続3日で egg -> baby に進化")
-    func evolveToBaby() {
-        let stage = CreatureEngine.checkEvolution(streak: 3, hp: 100, currentStage: .egg)
-        #expect(stage == .baby)
+    @Test("連続3日でナイトキャップが解放される")
+    func unlockNightcap() {
+        let accessories = CreatureEngine.checkNewAccessories(
+            bestStreak: 3,
+            unlockedIDs: []
+        )
+        let ids = accessories.map(\.id)
+        #expect(ids.contains("nightcap"))
     }
 
-    @Test("連続7日 + HP70超で young に進化")
-    func evolveToYoung() {
-        let stage = CreatureEngine.checkEvolution(streak: 7, hp: 75, currentStage: .baby)
-        #expect(stage == .young)
+    @Test("連続7日でマフラーと雲の上が解放される")
+    func unlockAtSevenDays() {
+        let accessories = CreatureEngine.checkNewAccessories(
+            bestStreak: 7,
+            unlockedIDs: ["nightcap", "pillow_mini"]
+        )
+        let ids = accessories.map(\.id)
+        #expect(ids.contains("scarf_fluffy"))
+        #expect(ids.contains("bg_clouds"))
     }
 
-    @Test("HP不足で進化しない")
-    func noEvolutionLowHP() {
-        let stage = CreatureEngine.checkEvolution(streak: 7, hp: 60, currentStage: .baby)
-        #expect(stage == .baby)
+    @Test("既に解放済みのアクセサリーは重複しない")
+    func noDuplicateUnlock() {
+        let accessories = CreatureEngine.checkNewAccessories(
+            bestStreak: 7,
+            unlockedIDs: ["nightcap", "pillow_mini", "scarf_fluffy", "bg_clouds"]
+        )
+        let ids = accessories.map(\.id)
+        #expect(!ids.contains("nightcap"))
+        #expect(!ids.contains("scarf_fluffy"))
     }
 
-    @Test("退化しない")
-    func noDevolve() {
-        let stage = CreatureEngine.checkEvolution(streak: 0, hp: 50, currentStage: .adult)
-        #expect(stage == .adult)
-    }
+    @Test("bestStreakでアクセサリーが解放される（現在のstreakがリセットされても）")
+    func bestStreakPreservesUnlocks() {
+        let creature = Creature()
+        creature.bestStreak = 7
+        creature.streak = 0 // リセット済み
 
-    @Test("連続60日 + HP90超で master に進化")
-    func evolveToMaster() {
-        let stage = CreatureEngine.checkEvolution(streak: 60, hp: 95, currentStage: .adult)
-        #expect(stage == .master)
+        let accessories = CreatureEngine.checkNewAccessories(
+            bestStreak: creature.bestStreak,
+            unlockedIDs: creature.unlockedAccessoryIDs
+        )
+        let ids = accessories.map(\.id)
+        #expect(ids.contains("nightcap"))
+        #expect(ids.contains("scarf_fluffy"))
     }
 
     // MARK: - ステータス適用テスト
@@ -166,7 +183,9 @@ struct CreatureEngineTests {
             hpDelta: 5,
             happinessDelta: 10,
             streakBroken: false,
-            newEvolutionStage: .baby
+            newAccessories: [
+                Accessory(id: "nightcap", name: "ナイトキャップ", category: .head, requiredStreak: 3)
+            ]
         )
 
         CreatureEngine.applyResult(result, to: creature)
@@ -174,8 +193,8 @@ struct CreatureEngineTests {
         #expect(creature.hp == 85)
         #expect(creature.happiness == 70)
         #expect(creature.streak == 3)
-        #expect(creature.evolutionStage == .baby)
         #expect(creature.totalWakeUps == 1)
+        #expect(creature.unlockedAccessoryIDs.contains("nightcap"))
     }
 
     @Test("HP上限は100")
@@ -187,7 +206,7 @@ struct CreatureEngineTests {
             hpDelta: 5,
             happinessDelta: 0,
             streakBroken: false,
-            newEvolutionStage: nil
+            newAccessories: []
         )
 
         CreatureEngine.applyResult(result, to: creature)
@@ -203,7 +222,7 @@ struct CreatureEngineTests {
             hpDelta: -20,
             happinessDelta: -30,
             streakBroken: true,
-            newEvolutionStage: nil
+            newAccessories: []
         )
 
         CreatureEngine.applyResult(result, to: creature)
@@ -213,20 +232,21 @@ struct CreatureEngineTests {
 
     // MARK: - 復活テスト
 
-    @Test("復活で HP50, しあわせ50, タマゴに戻る")
+    @Test("復活で HP50, しあわせ50 に戻る")
     func revive() {
         let creature = Creature()
         creature.hp = 0
         creature.isDead = true
-        creature.evolutionStage = .adult
         creature.streak = 0
+        creature.unlockedAccessoryIDs = ["nightcap"]
 
         CreatureEngine.revive(creature)
 
         #expect(creature.hp == 50)
         #expect(creature.happiness == 50)
         #expect(creature.isDead == false)
-        #expect(creature.evolutionStage == .egg)
+        // アクセサリーは失わない
+        #expect(creature.unlockedAccessoryIDs.contains("nightcap"))
     }
 
     // MARK: - 日次減衰テスト

@@ -6,7 +6,7 @@ struct CreatureEngine {
         let hpDelta: Int
         let happinessDelta: Int
         let streakBroken: Bool
-        let newEvolutionStage: EvolutionStage?
+        let newAccessories: [Accessory]
     }
 
     // MARK: - 起床結果の評価
@@ -44,43 +44,29 @@ struct CreatureEngine {
             streakBroken = true
         }
 
-        // 進化チェック
+        // アクセサリー解放チェック
         let newStreak = streakBroken ? 0 : creature.streak + 1
-        let newHP = min(100, max(0, creature.hp + hpDelta))
-        let candidateStage = checkEvolution(
-            streak: newStreak,
-            hp: newHP,
-            currentStage: creature.evolutionStage
+        let bestStreak = max(creature.bestStreak, newStreak)
+        let newAccessories = checkNewAccessories(
+            bestStreak: bestStreak,
+            unlockedIDs: creature.unlockedAccessoryIDs
         )
 
         return EvaluationResult(
             hpDelta: hpDelta,
             happinessDelta: happinessDelta,
             streakBroken: streakBroken,
-            newEvolutionStage: candidateStage != creature.evolutionStage ? candidateStage : nil
+            newAccessories: newAccessories
         )
     }
 
-    // MARK: - 進化判定（退化はしない）
+    // MARK: - アクセサリー解放判定
 
-    static func checkEvolution(
-        streak: Int,
-        hp: Int,
-        currentStage: EvolutionStage
-    ) -> EvolutionStage {
-        if streak >= 60 && hp > 90 {
-            return max(currentStage, .master)
-        }
-        if streak >= 21 && hp > 80 {
-            return max(currentStage, .adult)
-        }
-        if streak >= 7 && hp > 70 {
-            return max(currentStage, .young)
-        }
-        if streak >= 3 {
-            return max(currentStage, .baby)
-        }
-        return currentStage
+    static func checkNewAccessories(
+        bestStreak: Int,
+        unlockedIDs: [String]
+    ) -> [Accessory] {
+        AccessoryCatalog.unlockable(forStreak: bestStreak, excluding: unlockedIDs)
     }
 
     // MARK: - 日次減衰（アラーム未設定の日）
@@ -123,8 +109,13 @@ struct CreatureEngine {
             creature.streak += 1
         }
 
-        if let newStage = result.newEvolutionStage {
-            creature.evolutionStage = newStage
+        creature.bestStreak = max(creature.bestStreak, creature.streak)
+
+        // 新アクセサリーを解放
+        for accessory in result.newAccessories {
+            if !creature.unlockedAccessoryIDs.contains(accessory.id) {
+                creature.unlockedAccessoryIDs.append(accessory.id)
+            }
         }
 
         creature.totalWakeUps += 1
@@ -139,16 +130,7 @@ struct CreatureEngine {
         creature.happiness = 50
         creature.streak = 0
         creature.isDead = false
-        creature.evolutionStage = .egg
         creature.bornDate = .now
         creature.lastInteractionDate = .now
-    }
-}
-
-// MARK: - EvolutionStage Comparable
-
-extension EvolutionStage: Comparable {
-    static func < (lhs: EvolutionStage, rhs: EvolutionStage) -> Bool {
-        lhs.rawValue < rhs.rawValue
     }
 }

@@ -1,6 +1,7 @@
 import UIKit
 import UserNotifications
 import SwiftData
+import Combine
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
