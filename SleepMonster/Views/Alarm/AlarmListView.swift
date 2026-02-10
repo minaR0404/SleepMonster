@@ -93,8 +93,11 @@ struct AlarmRow: View {
                 set: { _ in onToggle() }
             ))
             .labelsHidden()
+            .accessibilityLabel("アラーム切り替え")
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("スワイプで削除")
     }
 }
 

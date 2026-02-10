@@ -11,30 +11,47 @@ struct HomeView: View {
             if let vm = creatureVM, let alarmVM = alarmVM {
                 ScrollView {
                     VStack(spacing: 24) {
-                        // 生き物の名前
-                        VStack(spacing: 4) {
-                            Text(vm.creature.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
+                        // 生き物の名前 → プロフィール画面へ
+                        NavigationLink {
+                            CreatureProfileView(vm: vm)
+                        } label: {
+                            VStack(spacing: 4) {
+                                Text(vm.creature.name)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
 
-                            // 解放済みアクセサリー数
-                            Text("アクセサリー \(vm.creature.unlockedAccessoryIDs.count)/\(AccessoryCatalog.all.count)")
-                                .font(.caption)
+                                HStack(spacing: 4) {
+                                    Image(systemName: "sparkles")
+                                        .font(.caption2)
+                                    Text("アクセサリー \(vm.creature.unlockedAccessoryIDs.count)/\(AccessoryCatalog.all.count)")
+                                        .font(.caption)
+                                }
                                 .foregroundStyle(.secondary)
+                            }
                         }
+                        .foregroundStyle(.primary)
 
                         // 生き物の表示
-                        CreatureView(
-                            expression: vm.creature.expression,
-                            hp: vm.creature.hpRatio,
-                            happiness: vm.creature.happinessRatio,
-                            equippedHead: vm.creature.equippedHead,
-                            equippedNeck: vm.creature.equippedNeck,
-                            equippedHeld: vm.creature.equippedHeld,
-                            equippedBack: vm.creature.equippedBack,
-                            equippedBackground: vm.creature.equippedBackground
-                        )
-                        .frame(width: 200, height: 200)
+                        GeometryReader { geo in
+                            let size = min(geo.size.width * 0.55, 280)
+                            CreatureView(
+                                expression: vm.creature.expression,
+                                hp: vm.creature.hpRatio,
+                                happiness: vm.creature.happinessRatio,
+                                equippedHead: vm.creature.equippedHead,
+                                equippedNeck: vm.creature.equippedNeck,
+                                equippedHeld: vm.creature.equippedHeld,
+                                equippedBack: vm.creature.equippedBack,
+                                equippedBackground: vm.creature.equippedBackground
+                            )
+                            .frame(width: size, height: size)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                        .aspectRatio(1, contentMode: .fit)
+                        .frame(maxWidth: 280)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(vm.creature.name)、HP\(Int(vm.creature.hpRatio * 100))パーセント、しあわせ\(Int(vm.creature.happinessRatio * 100))パーセント")
+                        .accessibilityHint("タップでなでる")
 
                         // HPとしあわせ度ゲージ
                         HStack(spacing: 24) {
@@ -161,6 +178,9 @@ struct CircularStatCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue("\(Int(value * 100))パーセント")
     }
 }
 
@@ -192,6 +212,9 @@ struct InfoCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(value)
     }
 }
 

@@ -135,8 +135,13 @@ struct DayToggle: View {
                         .fill(isSelected ? Color.purple : Color.gray.opacity(0.2))
                 )
                 .foregroundStyle(isSelected ? .white : .primary)
+                .contentShape(Circle())
+                .frame(minWidth: 44, minHeight: 44)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(name)曜日")
+        .accessibilityValue(isSelected ? "選択中" : "未選択")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

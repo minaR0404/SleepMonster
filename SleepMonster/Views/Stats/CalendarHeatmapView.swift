@@ -80,6 +80,19 @@ struct DayCell: View {
             }
         }
         .frame(height: 36)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(day)日")
+        .accessibilityValue(resultDescription)
+    }
+
+    private var resultDescription: String {
+        guard let result else { return "記録なし" }
+        switch result {
+        case .onTime: return "時間通り"
+        case .late: return "遅刻"
+        case .veryLate: return "寝坊"
+        case .missed: return "ミス"
+        }
     }
 
     private var cellColor: Color {

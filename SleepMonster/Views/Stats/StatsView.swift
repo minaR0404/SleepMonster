@@ -29,6 +29,7 @@ struct StatsView: View {
                                     } label: {
                                         Image(systemName: "chevron.left")
                                     }
+                                    .accessibilityLabel("前の月")
 
                                     Spacer()
                                     Text("\(String(displayYear))年\(displayMonth)月")
@@ -40,6 +41,7 @@ struct StatsView: View {
                                     } label: {
                                         Image(systemName: "chevron.right")
                                     }
+                                    .accessibilityLabel("次の月")
                                 }
                                 .padding(.horizontal, 16)
 
@@ -121,6 +123,9 @@ struct StatSummaryCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(value)
     }
 }
 
