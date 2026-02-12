@@ -91,7 +91,12 @@ struct HomeView: View {
                     }
                     .padding(.top, 20)
                 }
-                .navigationTitle("やまねむ")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        AppTitleView()
+                    }
+                }
                 .alert("新しいアクセサリー！", isPresented: Binding(
                     get: { vm.showAccessoryAlert },
                     set: { vm.showAccessoryAlert = $0 }
